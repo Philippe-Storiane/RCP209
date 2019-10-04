@@ -5,6 +5,9 @@ Created on Mon Sep 30 05:23:17 2019
 @author: a179415
 """
 
+import os
+
+os.chdir("C:/Users/philippe/Documents/CNAM/RCP 209")
 
 from keras.layers import Input, Dense, Conv2D, MaxPooling2D, Flatten
 from keras.models import Model
@@ -31,6 +34,17 @@ y_test= to_categorical( y_test )
 learning_rate = 0.5
 optimizer = SGD( learning_rate )
 
+def saveModel( model, savename ):
+    model_yaml = model.to_yaml()
+    model_filename = savename + ".yaml"
+    model_weights_filename = savename+".h5"
+    with open( model_filename, "w") as yaml_file:
+        yaml_file.write( model_yaml )
+        print( "YAML model ", model_filename, "saved to disk")
+    model.save_weights( model_weights_filename)
+    print("Weights", model_weights_filename, "saved to disk")
+    
+    
 # logistioc regression
 logistic_epochs = 10
 logistic_batch_size = 300
@@ -51,24 +65,29 @@ print("%s: %.2f%%" % (logistic.metrics_names[0], scores[0]*100))
 print("%s: %.2f%%" % (logistic.metrics_names[1], scores[1]*100))
 
 
+
+
+    
 # perceptron
+perceptron_epochs = 10
+perceptron_batch_size = 300
 input = Input(shape=(784,))
-hidden_layer = Dense( 100, activation = 'sigmoid')
+hidden_layer = Dense( 100, activation = 'sigmoid')(input)
 classifier_layer = Dense( 10, activation='softmax', name='fc1')( hidden_layer )
 perceptron = Model(inputs= input, outputs = classifier_layer)
 perceptron.compile( loss='categorical_crossentropy', optimizer = optimizer, metrics=[ 'accuracy' ])
 
-perceptron_history = logistic.fit(
+perceptron_history = perceptron.fit(
         X_train,
         y_train,
-        batch_size = logistic_batch_size,
-        epochs= logistic_epochs,
+        batch_size = perceptron_batch_size,
+        epochs= perceptron_epochs,
         verbose = 1,
         validation_data = ( X_test, y_test))
 scores = perceptron.evaluate( X_test, y_test )
 print("%s: %.2f%%" % (perceptron.metrics_names[0], scores[0]*100))
 print("%s: %.2f%%" % (perceptron.metrics_names[1], scores[1]*100))
-
+saveModel( perceptron, "perceptron")
 # convnet
 convnet_epochs = 50
 convnet_batch_size = 300
@@ -94,6 +113,7 @@ convnet_history = convnet.fit(
 scores = convnet.evaluate( X_test_conv, y_test )
 print("%s: %.2f%%" % (convnet.metrics_names[0], scores[0]*100))
 print("%s: %.2f%%" % (convnet.metrics_names[1], scores[1]*100))
+saveModel( convnet, "convnet")
 
 
 

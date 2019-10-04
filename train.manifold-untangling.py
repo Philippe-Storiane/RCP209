@@ -4,6 +4,10 @@ Created on Tue Oct  1 03:55:03 2019
 
 @author: philippe
 """
+import os
+
+os.chdir("C:/Users/philippe/Documents/CNAM/RCP 209")
+
 
 import matplotlib as mpl
 
@@ -17,7 +21,10 @@ from sklearn.neighbors import NearestNeighbors
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA 
 
+from keras.optimizers import SGD
 from keras.datasets import mnist
+from keras.models import model_from_yaml
+from keras.utils.np_utils import to_categorical
 
 (X_train, y_train), (X_test, y_test) = mnist.load_data()
 
@@ -31,13 +38,15 @@ X_test /= 255
 X_test = X_test.reshape( ( 10000, 784 ))
 X_test_conv = X_test.reshape( ( 10000, 28, 28, 1))
 
+labels = np.copy( y_test )
+y_test = to_categorical( y_test )
 #y_train = to_categorical( y_train )
 #y_test= to_categorical( y_test )
 
 X_tsne = TSNE( n_components = 2, perplexity = 30, init='pca').fit_transform( X_test )
 
 x2d = X_tsne
-labels = y_test
+
 
 
 def convexHulls(points, labels):
@@ -135,7 +144,9 @@ def visualization(points2D, labels, convex_hulls, ellipses ,projname, nh):
 
 
 
-labels = X_test
+
+
+
 X_tsne = TSNE( n_components = 2, perplexity = 30, init='pca').fit_transform( X_test )
 ellipses = best_ellipses(X_tsne, labels)
 convex_hulls= convexHulls(X_tsne, labels)
@@ -149,7 +160,7 @@ nh= neighboring_hit(X_pca, labels)
 visualization(X_pca, labels, convex_hulls, ellipses , 'PCA', nh)
 
 
-from keras.models import model_from_yaml
+
 
 def loadModel(savename):
     with open(savename+".yaml", "r") as yaml_file:
@@ -159,7 +170,11 @@ def loadModel(savename):
     print("Weights ",savename,".h5 loaded ")
     return model
 
-perceptron = loadModel( "perceptron.h5")
+learning_rate = 0.5
+optimizer = SGD( learning_rate )
+
+perceptron = loadModel( "perceptron")
+perceptron.compile( loss='categorical_crossentropy', optimizer = optimizer, metrics=[ 'accuracy' ])
 X_MP = perceptron.predict( X_test)
 X_MP_tsne = TSNE( n_components = 2, perplexity = 30, init='pca').fit_transform( X_MP )
 ellipses = best_ellipses(X_MP_tsne, labels)
@@ -168,8 +183,9 @@ nh= neighboring_hit(X_MP_tsne, labels)
 visualization(X_MP_tsne, labels, convex_hulls, ellipses , 'MP_t-SNE', nh)
 
 
-convnet = loadModel( "convnet.h5")
-X_CNN = convnet.predict( X_test )
+convnet = loadModel( "convnet")
+X_CNN = convnet.predict( X_test_conv )
+convnet.predict( X_test_conv, )
 X_CNN_tsne = TSNE( n_components = 2, perplexity = 30, init='pca').fit_transform( X_CNN )
 ellipses = best_ellipses(X_CNN_tsne, labels)
 convex_hulls= convexHulls(X_CNN_tsne, labels)
